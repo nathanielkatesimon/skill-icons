@@ -1,4 +1,4 @@
-package handler
+package icons
 
 import (
 	"encoding/json"
@@ -7,12 +7,13 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
 )
 
 var icons map[string]string = make(map[string]string)
 var iconNameList []string
 var themedIcons []string
+
+
 
 
 
@@ -179,7 +180,7 @@ func contains(arr []string, str string) bool {
 	return false
 }
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func init(){
 	decoder := json.NewDecoder(strings.NewReader(iconsJSON))
 	if err := decoder.Decode(&icons); err != nil {
 		panic(err)
@@ -192,12 +193,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			themedIcons = append(themedIcons, strings.Split(key, "-")[0])
 		}
 	}
-	
+}
+
+func Handler(w http.ResponseWriter, r *http.Request) {
 	parse_form_err := r.ParseForm()
 	if parse_form_err != nil {
 		http.Error(w, "Failed to parse form", http.StatusBadRequest)
 	}
-
 
 	iconParam := r.Form.Get("i")
 
