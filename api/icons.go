@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 )
 
 var icons map[string]string = make(map[string]string)
@@ -97,10 +96,6 @@ var shortNames = map[string]string{
     "jq":                "jqlang",
 }
 
-var (
-	app *gin.Engine
-)
-
 const (
 	ICONS_PER_LINE = 15
 	ONE_ICON       = 48
@@ -184,77 +179,6 @@ func contains(arr []string, str string) bool {
 	return false
 }
 
-func iconRoute(r *gin.RouterGroup) {
-	r.GET("/icons", func(ctx *gin.Context) {
-		ctx.Request.ParseForm()
-		iconParam := ctx.Request.Form.Get("i")
-
-		theme := ctx.Request.Form.Get("theme")
-		if theme == "" {
-			theme = "auto"
-		}
-
-		perLineStr := ctx.Request.Form.Get("perline")
-		if perLineStr == "" {
-			perLineStr = "15"
-		}
-
-        hasTitles := ctx.Request.Form.Get("titles")
-        var hasTitlesEnabled bool
-        if hasTitles == "" {
-            hasTitlesEnabled = false
-        } else {
-            hasTitlesEnabled = true
-        }
-
-        align := ctx.Request.Form.Get("align")
-        if align != "left" && align != "right" && align != "center" {
-            align = "left"
-        }
-
-		if iconParam == "" {
-			ctx.String(http.StatusBadRequest, "You didn't specify any icons!")
-			return
-		}
-
-		if theme != "dark" && theme != "light" && theme != "auto" && theme != "" {
-			ctx.String(http.StatusBadRequest, "Theme must be either 'light', 'dark' or 'auto'")
-			return
-		}
-
-		perLine, err := strconv.Atoi(perLineStr)
-		if err != nil || perLine < -1 || perLine > 50 {
-			ctx.String(http.StatusBadRequest, "Icons per line must be a number between 1 and 50")
-			return
-		}
-
-		var iconShortNames []string
-		if iconParam == "all" {
-			iconShortNames = iconNameList
-		} else {
-			iconShortNames = strings.Split(iconParam, ",")
-		}
-
-		iconNames := parseShortNames(iconShortNames, theme)
-		if iconNames == nil {
-			ctx.String(http.StatusBadRequest, "You didn't format the icons param correctly!")
-			return
-		}
-
-		svg := generateSvg(iconNames, perLine, hasTitlesEnabled, align)
-
-		ctx.Header("Content-Type", "image/svg+xml")
-		ctx.String(http.StatusOK, svg)
-	})
-}
-
-func init() {
-	app = gin.New()
-	r := app.Group("/api")
-
-	iconRoute(r)
-}
-
 func Handler(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(strings.NewReader(iconsJSON))
 	if err := decoder.Decode(&icons); err != nil {
@@ -268,6 +192,69 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			themedIcons = append(themedIcons, strings.Split(key, "-")[0])
 		}
 	}
+	
+	parse_form_err := r.ParseForm()
+	if parse_form_err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+	}
 
-	app.ServeHTTP(w, r)
+
+	iconParam := r.Form.Get("i")
+
+	theme := r.Form.Get("theme")
+	if theme == "" {
+		theme = "auto"
+	}
+
+	perLineStr := r.Form.Get("perline")
+	if perLineStr == "" {
+		perLineStr = "15"
+	}
+
+	hasTitles := r.Form.Get("titles")
+	var hasTitlesEnabled bool
+	if hasTitles == "" {
+		hasTitlesEnabled = false
+	} else {
+		hasTitlesEnabled = true
+	}
+
+	align := r.Form.Get("align")
+	if align != "left" && align != "right" && align != "center" {
+		align = "left"
+	}
+
+	if iconParam == "" {
+		http.Error(w, "You didn't specificy any icons!", http.StatusBadRequest)
+		return
+	}
+
+	if theme != "dark" && theme != "light" && theme != "auto" && theme != "" {
+		http.Error(w, "Theme must be either 'light', 'dark' or 'auto'", http.StatusBadRequest)
+		return
+	}
+
+	perLine, err := strconv.Atoi(perLineStr)
+	if err != nil || perLine < -1 || perLine > 50 {
+		http.Error(w, "Icons per line must be a number between 1 and 50", http.StatusBadRequest)
+		return
+	}
+
+	var iconShortNames []string
+	if iconParam == "all" {
+		iconShortNames = iconNameList
+	} else {
+		iconShortNames = strings.Split(iconParam, ",")
+	}
+
+	iconNames := parseShortNames(iconShortNames, theme)
+	if iconNames == nil {
+		http.Error(w, "You didn't format the icons param correctly!", http.StatusBadRequest)
+		return
+	}
+
+	svg := generateSvg(iconNames, perLine, hasTitlesEnabled, align)
+
+	w.Header().Set("Content-Type", "image/svg+xml")
+	fmt.Fprintf(w, svg)
 }
