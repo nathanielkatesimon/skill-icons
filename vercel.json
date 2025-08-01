@@ -6,8 +6,6 @@
         "destination": "/api/index.go"
       }
     ],
-    "git": {
-      "deploymentEnabled": false
-    }
+    "buildCommand": "node go_build.js"
   }
   
