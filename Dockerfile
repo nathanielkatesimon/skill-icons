@@ -11,7 +11,6 @@ COPY go.sum /app/go.sum
 RUN go mod tidy
 RUN go run build.go
 
-# RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix nocgo -ldflags="-s -w" -o skillicons ./server.go
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix nocgo -ldflags="-s -w" -o skillicons ./server.go
 
 FROM scratch
