@@ -186,6 +186,9 @@ func contains(arr []string, str string) bool {
 
 func iconRoute(r *gin.RouterGroup) {
 	r.GET("/icons", func(ctx *gin.Context) {
+		fmt.Println("Icons loaded:", len(icons))
+		fmt.Println("Icon names:", iconNameList)
+		fmt.Println("Themed icons:", themedIcons)
 
 		ctx.Request.ParseForm()
 		iconParam := ctx.Request.Form.Get("i")
