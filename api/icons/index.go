@@ -257,6 +257,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	svg := generateSvg(iconNames, perLine, hasTitlesEnabled, align)
 
+	cacheHeader := "public, s-maxage=604800"
+	w.Header().Set("Cache-Control", cacheHeader)
+	w.Header().Set("CDN-Cache-Control", cacheHeader)
+	w.Header().Set("Vercel-CDN-Cache-Control", cacheHeader)
 	w.Header().Set("Content-Type", "image/svg+xml")
 	fmt.Fprintf(w, svg)
 }
